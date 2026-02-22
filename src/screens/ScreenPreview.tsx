@@ -22,7 +22,12 @@ export const ScreenPreview = ({}: ScreenPreviewProps) => {
     <View style={styles.container}>
       <View style={styles.screenWrap}>
         {activeScreen === 'home' && (
-          <HomeDashboardScreen onAddTask={() => navigateTo('newTask')} onNavigate={navigateTo} />
+          <HomeDashboardScreen
+            onAddTask={() => navigateTo('newTask')}
+            onNavigate={navigateTo}
+            upcomingTasks={[]}
+            stats={{ today: 0, scheduled: 0, done: 0 }}
+          />
         )}
         {activeScreen === 'login' && (
           <LoginScreen
@@ -51,9 +56,9 @@ export const ScreenPreview = ({}: ScreenPreviewProps) => {
           />
         )}
         {activeScreen === 'tasks' && (
-          <TaskListScreen onAddTask={() => navigateTo('newTask')} onNavigate={navigateTo} />
+          <TaskListScreen onAddTask={() => navigateTo('newTask')} onNavigate={navigateTo} sections={[]} />
         )}
-        {activeScreen === 'newTask' && <NewTaskModalScreen onClose={closeModal} onSave={closeModal} />}
+        {activeScreen === 'newTask' && <NewTaskModalScreen onClose={closeModal} onSave={() => closeModal()} />}
         {activeScreen === 'settings' && <AppSettingsScreen onNavigate={navigateTo} />}
       </View>
     </View>

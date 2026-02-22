@@ -1,5 +1,3 @@
-export type ReminderPriority = 'High' | 'Medium' | 'Low';
-
 export const userProfile = {
   name: 'Jo Vanne',
   greeting: 'Good Morning, Jonalyn',
@@ -9,46 +7,6 @@ export const userProfile = {
   appVersion: 'Remindly App v2.4.0 (2024)',
   appTagline: 'Made with care for Productivity',
 };
-
-export const dashboardStats = [
-  { label: 'Today', value: '5', accent: 'primary' },
-  { label: 'Scheduled', value: '12', accent: 'neutral' },
-  { label: 'Done', value: '8', accent: 'neutral' },
-] as const;
-
-export const upcomingReminders = [
-  { title: 'Morning Workout', time: '07:00 AM', priority: 'High' as ReminderPriority, accent: 'red' },
-  { title: 'Team Sync Meeting', time: '10:30 AM', priority: 'Medium' as ReminderPriority, accent: 'orange' },
-  { title: 'Grocery Shopping', time: '05:00 PM', priority: 'Low' as ReminderPriority, accent: 'primary' },
-  { title: 'Vitamins Reminder', time: '08:00 PM', priority: 'Low' as ReminderPriority, accent: 'green' },
-];
-
-export const taskSections = [
-  {
-    title: 'Overdue',
-    countLabel: '2 tasks',
-    accent: 'danger',
-    tasks: [
-      { title: 'Finalize quarterly report', meta: 'Yesterday - Work', checked: false },
-      { title: 'Call insurance agent', meta: '9:00 AM - Personal', checked: false },
-    ],
-  },
-  {
-    title: 'Today',
-    countLabel: '3 tasks',
-    accent: 'primary',
-    tasks: [
-      { title: 'Grocery shopping', meta: '5:00 PM - Home', checked: false },
-      { title: 'Morning yoga session', meta: 'Done - Health', checked: true },
-      { title: 'Design review with team', meta: '2:00 PM - Work', checked: false },
-    ],
-  },
-] as const;
-
-export const quickProjects = [
-  { title: 'Home Improvement', count: '12 tasks', accent: 'primary' },
-  { title: 'Product Launch', count: '8 tasks', accent: 'orange' },
-];
 
 export const newTaskDefaults = {
   titlePlaceholder: 'What needs to be done?',

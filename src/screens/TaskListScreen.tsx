@@ -1,22 +1,73 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
 
 import { BottomNav } from '../components/BottomNav';
 import { TaskRow } from '../components/TaskRow';
-import { ProjectCard } from '../components/ProjectCard';
 import { AppIcon } from '../components/ui/AppIcon';
-import { taskSections, quickProjects, ScreenKey } from '../data/mockData';
+import { ScreenKey } from '../data/mockData';
+import { Task, TaskPriority } from '../data/tasks/models';
 import { palette, radii, spacing, theme } from '../theme/colors';
 
 export interface TaskListScreenProps {
   readonly onAddTask?: () => void;
   readonly onNavigate?: (screen: ScreenKey) => void;
+  readonly sections?: Array<{
+    readonly title: string;
+    readonly countLabel: string;
+    readonly accent: 'danger' | 'primary';
+    readonly tasks: Task[];
+  }>;
+  readonly upcomingTasks?: Task[];
 }
 
 const HEADER_ICON_SIZE = 18;
 const FAB_ICON_SIZE = 22;
 const noop = () => {};
+type TaskTab = 'today' | 'upcoming';
 
-export const TaskListScreen = ({ onAddTask, onNavigate }: TaskListScreenProps) => {
+const priorityLabel: Record<TaskPriority, string> = {
+  High: 'High',
+  Medium: 'Medium',
+  Low: 'Low',
+};
+
+const formatTaskMeta = (task: Task) => {
+  const date = new Date(task.scheduledAt);
+  const now = new Date();
+  const isToday =
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate();
+  const dayLabel = isToday
+    ? 'Today'
+    : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const timeLabel = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  return `${dayLabel} • ${timeLabel} • ${priorityLabel[task.priority]}`;
+};
+
+export const TaskListScreen = ({
+  onAddTask,
+  onNavigate,
+  sections = [],
+  upcomingTasks = [],
+}: TaskListScreenProps) => {
+  const [activeTab, setActiveTab] = useState<TaskTab>('today');
+
+  const upcomingSections = useMemo(() => {
+    if (upcomingTasks.length === 0) {
+      return [];
+    }
+    return [
+      {
+        title: 'Upcoming',
+        countLabel: `${upcomingTasks.length} task${upcomingTasks.length === 1 ? '' : 's'}`,
+        accent: 'primary' as const,
+        tasks: upcomingTasks,
+      },
+    ];
+  }, [upcomingTasks]);
+
+  const activeSections = activeTab === 'today' ? sections : upcomingSections;
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -33,54 +84,52 @@ export const TaskListScreen = ({ onAddTask, onNavigate }: TaskListScreenProps) =
         </View>
 
         <View style={styles.tabs}>
-          <Text style={[styles.tab, styles.tabActive]}>Today</Text>
-          <Text style={styles.tab}>Upcoming</Text>
-          <Text style={styles.tab}>Projects</Text>
+          <Pressable onPress={() => setActiveTab('today')}>
+            <Text style={[styles.tab, activeTab === 'today' && styles.tabActive]}>Today</Text>
+          </Pressable>
+          <Pressable onPress={() => setActiveTab('upcoming')}>
+            <Text style={[styles.tab, activeTab === 'upcoming' && styles.tabActive]}>Upcoming</Text>
+          </Pressable>
         </View>
 
-        {taskSections.map((section) => (
-          <View key={section.title} style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text
-                style={[
-                  styles.sectionTitle,
-                  section.accent === 'danger' && { color: palette.red500 },
-                  section.accent === 'primary' && { color: theme.colors.primary },
-                ]}
-              >
-                {section.title}
-              </Text>
-              <Text style={styles.sectionCount}>{section.countLabel}</Text>
-            </View>
-            <View style={styles.taskList}>
-              {section.tasks.map((task, index) => (
-                <View
-                  key={task.title}
-                  style={[styles.taskItem, index === section.tasks.length - 1 && styles.taskItemLast]}
+        {activeSections.length === 0 ? (
+          <Text style={styles.emptyText}>
+            {activeTab === 'today'
+              ? 'No tasks today. Tap the + button to add one.'
+              : 'No upcoming tasks yet.'}
+          </Text>
+        ) : (
+          activeSections.map((section) => (
+            <View key={section.title} style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    section.accent === 'danger' && { color: palette.red500 },
+                    section.accent === 'primary' && { color: theme.colors.primary },
+                  ]}
                 >
-                  <TaskRow title={task.title} meta={task.meta} checked={task.checked} />
-                </View>
-              ))}
-            </View>
-          </View>
-        ))}
-
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitleMuted}>Quick Projects</Text>
-            <Text style={styles.sectionCount}>View all</Text>
-          </View>
-          <View style={styles.projectGrid}>
-            {quickProjects.map((project, index) => (
-              <View
-                key={project.title}
-                style={[styles.projectItem, index === quickProjects.length - 1 && styles.projectItemLast]}
-              >
-                <ProjectCard title={project.title} count={project.count} accent={project.accent} />
+                  {section.title}
+                </Text>
+                <Text style={styles.sectionCount}>{section.countLabel}</Text>
               </View>
-            ))}
-          </View>
-        </View>
+              <View style={styles.taskList}>
+                {section.tasks.map((task, index) => (
+                  <View
+                    key={task.id}
+                    style={[styles.taskItem, index === section.tasks.length - 1 && styles.taskItemLast]}
+                  >
+                    <TaskRow
+                      title={task.title}
+                      meta={formatTaskMeta(task)}
+                      checked={task.isCompleted}
+                    />
+                  </View>
+                ))}
+              </View>
+            </View>
+          ))
+        )}
       </ScrollView>
 
       <Pressable style={styles.fab} onPress={onAddTask}>
@@ -161,13 +210,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: theme.colors.textSecondary,
   },
-  sectionTitleMuted: {
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-    color: theme.colors.textSecondary,
-  },
   sectionCount: {
     fontSize: 11,
     color: theme.colors.textSecondary,
@@ -179,15 +221,10 @@ const styles = StyleSheet.create({
   taskItemLast: {
     marginBottom: 0,
   },
-  projectGrid: {
-    flexDirection: 'row',
-  },
-  projectItem: {
-    flex: 1,
-    marginRight: spacing.md,
-  },
-  projectItemLast: {
-    marginRight: 0,
+  emptyText: {
+    marginTop: spacing.xl,
+    fontSize: 12,
+    color: theme.colors.textSecondary,
   },
   fab: {
     position: 'absolute',

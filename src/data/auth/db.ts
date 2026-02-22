@@ -39,6 +39,24 @@ const CREATE_TABLE_STATEMENTS: SqlStatement[] = [
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );`,
   },
+  {
+    sql: `CREATE TABLE IF NOT EXISTS tasks (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      priority TEXT NOT NULL,
+      scheduled_at TEXT NOT NULL,
+      is_completed INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );`,
+  },
+  {
+    sql: `CREATE INDEX IF NOT EXISTS idx_tasks_user_scheduled
+      ON tasks(user_id, scheduled_at);`,
+  },
 ];
 
 let dbInstance: SQLiteDatabase | null = null;

@@ -15,14 +15,21 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 
 import { ActionButton } from '../components/ActionButton';
 import { newTaskDefaults } from '../data/mockData';
+import { AuthStatusMessage } from '../components/ui/AuthStatusMessage';
+import { TaskPriority } from '../data/tasks/models';
 import { radii, spacing, theme } from '../theme/colors';
 
 export interface NewTaskModalScreenProps {
-  readonly onSave?: () => void;
+  readonly onSave?: (payload: {
+    title: string;
+    description: string | null;
+    scheduledAt: string;
+    priority: TaskPriority;
+  }) => void;
   readonly onClose?: () => void;
 }
 
-type PriorityLevel = 'Low' | 'Medium' | 'High';
+type PriorityLevel = TaskPriority;
 
 const createDefaultTime = () => {
   const time = new Date();
@@ -52,9 +59,13 @@ const DRAG_HANDLE_HEIGHT = 80;
 const CLOSE_ANIMATION_DURATION = 200;
 
 export const NewTaskModalScreen = ({ onSave, onClose }: NewTaskModalScreenProps) => {
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState(createDefaultTime());
   const [selectedPriority, setSelectedPriority] = useState<PriorityLevel>('Medium');
+  const [status, setStatus] = useState<'idle' | 'error' | 'empty'>('idle');
+  const [statusMessage, setStatusMessage] = useState<string | undefined>(undefined);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const screenHeight = useMemo(() => Dimensions.get('window').height, []);
@@ -115,6 +126,33 @@ export const NewTaskModalScreen = ({ onSave, onClose }: NewTaskModalScreenProps)
     setShowTimePicker((prev) => !prev);
   };
 
+  const handleSave = () => {
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) {
+      setStatus('empty');
+      setStatusMessage('Task title is required.');
+      return;
+    }
+    const scheduledAt = new Date(
+      selectedDate.getFullYear(),
+      selectedDate.getMonth(),
+      selectedDate.getDate(),
+      selectedTime.getHours(),
+      selectedTime.getMinutes(),
+      0,
+      0,
+    ).toISOString();
+
+    setStatus('idle');
+    setStatusMessage(undefined);
+    onSave?.({
+      title: trimmedTitle,
+      description: description.trim() ? description.trim() : null,
+      scheduledAt,
+      priority: selectedPriority,
+    });
+  };
+
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (event, gestureState) => {
@@ -158,11 +196,21 @@ export const NewTaskModalScreen = ({ onSave, onClose }: NewTaskModalScreenProps)
         <View style={styles.sheetDragArea} {...panResponder.panHandlers}>
           <View style={styles.sheetHandle} />
           <View style={styles.sheetHeader}>
-          <Text style={styles.sheetTitle}>New Task</Text>
-          <Pressable onPress={closeWithAnimation}>
-            <Text style={styles.clearText}>Clear</Text>
-          </Pressable>
-        </View>
+            <Text style={styles.sheetTitle}>New Task</Text>
+            <Pressable
+              onPress={() => {
+                setTitle('');
+                setDescription('');
+                setSelectedDate(new Date());
+                setSelectedTime(createDefaultTime());
+                setSelectedPriority('Medium');
+                setStatus('idle');
+                setStatusMessage(undefined);
+              }}
+            >
+              <Text style={styles.clearText}>Clear</Text>
+            </Pressable>
+          </View>
         </View>
         <ScrollView contentContainerStyle={styles.sheetContent} showsVerticalScrollIndicator={false}>
           <View style={styles.fieldBlock}>
@@ -171,6 +219,8 @@ export const NewTaskModalScreen = ({ onSave, onClose }: NewTaskModalScreenProps)
               placeholder={newTaskDefaults.titlePlaceholder}
               placeholderTextColor={theme.colors.textSecondary}
               style={styles.input}
+              value={title}
+              onChangeText={setTitle}
             />
           </View>
 
@@ -181,6 +231,8 @@ export const NewTaskModalScreen = ({ onSave, onClose }: NewTaskModalScreenProps)
               placeholderTextColor={theme.colors.textSecondary}
               style={[styles.input, styles.textarea]}
               multiline
+              value={description}
+              onChangeText={setDescription}
             />
           </View>
 
@@ -257,8 +309,9 @@ export const NewTaskModalScreen = ({ onSave, onClose }: NewTaskModalScreenProps)
               style={styles.cancelButton}
               onPress={closeWithAnimation}
             />
-            <ActionButton label="Save Task" onPress={onSave} style={styles.saveButton} />
+            <ActionButton label="Save Task" onPress={handleSave} style={styles.saveButton} />
           </View>
+          <AuthStatusMessage status={status} message={statusMessage} align="center" />
         </ScrollView>
       </Animated.View>
     </View>
