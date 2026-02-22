@@ -31,7 +31,9 @@ const formatRelative = (dateIso?: string) => {
     return '';
   }
   const value = new Date(dateIso).getTime();
-  const diffMinutes = Math.round((value - Date.now()) / (60 * 1000));
+  const diffMinutesFloat = (value - Date.now()) / (60 * 1000);
+  const diffMinutes =
+    diffMinutesFloat >= 0 ? Math.ceil(diffMinutesFloat) : Math.floor(diffMinutesFloat);
   const absMinutes = Math.abs(diffMinutes);
   if (absMinutes < 1) {
     return 'now';
@@ -39,7 +41,7 @@ const formatRelative = (dateIso?: string) => {
   if (absMinutes < 60) {
     return diffMinutes > 0 ? `in ${absMinutes}m` : `${absMinutes}m ago`;
   }
-  const hours = Math.round(absMinutes / 60);
+  const hours = diffMinutes > 0 ? Math.ceil(absMinutes / 60) : Math.floor(absMinutes / 60);
   return diffMinutes > 0 ? `in ${hours}h` : `${hours}h ago`;
 };
 

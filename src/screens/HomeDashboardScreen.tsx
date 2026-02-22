@@ -25,6 +25,7 @@ export interface HomeDashboardScreenProps {
   readonly onNavigate?: (screen: ScreenKey) => void;
   readonly onOpenNotifications?: () => void;
   readonly unreadNotifications?: number;
+  readonly missedReminderTasks?: Task[];
   readonly upcomingTasks?: Task[];
   readonly upcomingLimit?: number;
   readonly stats?: {
@@ -60,6 +61,7 @@ export const HomeDashboardScreen = ({
   onNavigate,
   onOpenNotifications,
   unreadNotifications = 0,
+  missedReminderTasks = [],
   upcomingTasks = [],
   upcomingLimit = 10,
   stats = { today: 0, scheduled: 0, done: 0 },
@@ -69,6 +71,7 @@ export const HomeDashboardScreen = ({
   const overlayOpacity = useRef(new Animated.Value(0)).current;
   const screenHeight = useMemo(() => Dimensions.get('window').height, []);
   const displayUpcoming = useMemo(() => upcomingTasks.slice(0, upcomingLimit), [upcomingTasks, upcomingLimit]);
+  const displayMissed = useMemo(() => missedReminderTasks.slice(0, upcomingLimit), [missedReminderTasks, upcomingLimit]);
 
   const openSheet = useCallback(() => {
     sheetTranslateY.setValue(screenHeight);
@@ -179,6 +182,27 @@ export const HomeDashboardScreen = ({
             </View>
           ))}
         </View>
+
+        {displayMissed.length > 0 ? (
+          <View style={styles.sectionSpacer}>
+            <SectionHeader title="Missed Reminders" />
+            <View style={styles.cardList}>
+              {displayMissed.map((item, index) => (
+                <View
+                  key={item.id}
+                  style={[styles.cardItem, index === displayMissed.length - 1 && styles.cardItemLast]}
+                >
+                  <ReminderCard
+                    title={item.title}
+                    time={formatDateTimeLabel(new Date(item.scheduledAt))}
+                    priority={item.priority}
+                    accent={priorityAccentMap[item.priority]}
+                  />
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
 
         <View style={styles.sectionSpacer}>
           <SectionHeader title="Upcoming Reminders" actionLabel="See all" onPressAction={openSheet} />

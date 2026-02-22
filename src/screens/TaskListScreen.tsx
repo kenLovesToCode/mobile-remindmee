@@ -1,4 +1,4 @@
-import { Animated, Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Dimensions, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useMemo, useRef, useState } from 'react';
 
 import { BottomNav } from '../components/BottomNav';
@@ -13,6 +13,8 @@ export interface TaskListScreenProps {
   readonly onAddTask?: () => void;
   readonly onNavigate?: (screen: ScreenKey) => void;
   readonly onEditTask?: (taskId: string) => void;
+  readonly onCompleteTask?: (taskId: string) => void;
+  readonly onReactivateTask?: (taskId: string) => void;
   readonly onDeleteTask?: (taskId: string) => void;
   readonly sections?: Array<{
     readonly title: string;
@@ -21,12 +23,13 @@ export interface TaskListScreenProps {
     readonly tasks: Task[];
   }>;
   readonly upcomingTasks?: Task[];
+  readonly completedTasks?: Task[];
 }
 
 const HEADER_ICON_SIZE = 18;
 const FAB_ICON_SIZE = 22;
 const noop = () => {};
-type TaskTab = 'today' | 'upcoming';
+type TaskTab = 'today' | 'upcoming' | 'completed';
 const SHEET_CLOSE_DURATION = 180;
 const SHEET_MAX_HEIGHT = 0.6;
 
@@ -75,11 +78,16 @@ export const TaskListScreen = ({
   onAddTask,
   onNavigate,
   onEditTask,
+  onCompleteTask,
+  onReactivateTask,
   onDeleteTask,
   sections = [],
   upcomingTasks = [],
+  completedTasks = [],
 }: TaskListScreenProps) => {
   const [activeTab, setActiveTab] = useState<TaskTab>('today');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
   const deleteTranslateY = useRef(new Animated.Value(0)).current;
   const overlayOpacity = useRef(new Animated.Value(0)).current;
@@ -99,7 +107,79 @@ export const TaskListScreen = ({
     ];
   }, [upcomingTasks]);
 
-  const activeSections = activeTab === 'today' ? sections : upcomingSections;
+  const completedSections = useMemo(() => {
+    if (completedTasks.length === 0) {
+      return [];
+    }
+    return [
+      {
+        title: 'Completed',
+        countLabel: `${completedTasks.length} task${completedTasks.length === 1 ? '' : 's'}`,
+        accent: 'primary' as const,
+        tasks: completedTasks,
+      },
+    ];
+  }, [completedTasks]);
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const matchesQuery = (task: Task) => {
+    if (!normalizedQuery) {
+      return true;
+    }
+    return task.title.toLowerCase().includes(normalizedQuery);
+  };
+
+  const filteredSections = useMemo(() => {
+    if (activeTab !== 'today') {
+      return [];
+    }
+    return sections
+      .map((section) => ({ ...section, tasks: section.tasks.filter(matchesQuery) }))
+      .filter((section) => section.tasks.length > 0);
+  }, [activeTab, sections, normalizedQuery]);
+
+  const filteredUpcomingSections = useMemo(() => {
+    if (activeTab !== 'upcoming') {
+      return [];
+    }
+    const filteredTasks = upcomingTasks.filter(matchesQuery);
+    if (filteredTasks.length === 0) {
+      return [];
+    }
+    return [
+      {
+        title: 'Upcoming',
+        countLabel: `${filteredTasks.length} task${filteredTasks.length === 1 ? '' : 's'}`,
+        accent: 'primary' as const,
+        tasks: filteredTasks,
+      },
+    ];
+  }, [activeTab, upcomingTasks, normalizedQuery]);
+
+  const filteredCompletedSections = useMemo(() => {
+    if (activeTab !== 'completed') {
+      return [];
+    }
+    const filteredTasks = completedTasks.filter(matchesQuery);
+    if (filteredTasks.length === 0) {
+      return [];
+    }
+    return [
+      {
+        title: 'Completed',
+        countLabel: `${filteredTasks.length} task${filteredTasks.length === 1 ? '' : 's'}`,
+        accent: 'primary' as const,
+        tasks: filteredTasks,
+      },
+    ];
+  }, [activeTab, completedTasks, normalizedQuery]);
+
+  const activeSections =
+    activeTab === 'today'
+      ? filteredSections
+      : activeTab === 'upcoming'
+        ? filteredUpcomingSections
+        : filteredCompletedSections;
 
   const openDeleteSheet = (task: Task) => {
     deleteTranslateY.setValue(screenHeight);
@@ -153,11 +233,35 @@ export const TaskListScreen = ({
         basePaddingTop={spacing.xxxl}
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Tasks</Text>
-          <View style={styles.headerActions}>
-            <View style={[styles.headerIcon, styles.headerIconSpacing]}>
+          {isSearchOpen ? (
+            <View style={styles.searchField}>
               <AppIcon name="search" size={HEADER_ICON_SIZE} color={theme.colors.textSecondary} />
+              <TextInput
+                placeholder="Search tasks"
+                placeholderTextColor={theme.colors.textSecondary}
+                style={styles.searchInput}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoCorrect={false}
+                autoCapitalize="none"
+                returnKeyType="search"
+              />
             </View>
+          ) : (
+            <Text style={styles.title}>Tasks</Text>
+          )}
+          <View style={styles.headerActions}>
+            <Pressable
+              style={[styles.headerIcon, styles.headerIconSpacing]}
+              onPress={() => {
+                setIsSearchOpen((prev) => !prev);
+                if (isSearchOpen) {
+                  setSearchQuery('');
+                }
+              }}
+            >
+              <AppIcon name={isSearchOpen ? 'x' : 'search'} size={HEADER_ICON_SIZE} color={theme.colors.textSecondary} />
+            </Pressable>
             <View style={styles.headerIcon}>
               <AppIcon name="filter" size={HEADER_ICON_SIZE} color={theme.colors.textSecondary} />
             </View>
@@ -165,19 +269,38 @@ export const TaskListScreen = ({
         </View>
 
         <View style={styles.tabs}>
-          <Pressable onPress={() => setActiveTab('today')}>
+          <Pressable
+            onPress={() => {
+              setActiveTab('today');
+            }}
+          >
             <Text style={[styles.tab, activeTab === 'today' && styles.tabActive]}>Today</Text>
           </Pressable>
-          <Pressable onPress={() => setActiveTab('upcoming')}>
+          <Pressable
+            onPress={() => {
+              setActiveTab('upcoming');
+            }}
+          >
             <Text style={[styles.tab, activeTab === 'upcoming' && styles.tabActive]}>Upcoming</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              setActiveTab('completed');
+            }}
+          >
+            <Text style={[styles.tab, activeTab === 'completed' && styles.tabActive]}>Completed</Text>
           </Pressable>
         </View>
 
         {activeSections.length === 0 ? (
           <Text style={styles.emptyText}>
-            {activeTab === 'today'
-              ? 'No tasks today. Tap the + button to add one.'
-              : 'No upcoming tasks yet.'}
+            {normalizedQuery
+              ? 'No matching tasks.'
+              : activeTab === 'today'
+                ? 'No tasks today. Tap the + button to add one.'
+                : activeTab === 'upcoming'
+                  ? 'No upcoming tasks yet.'
+                  : 'No completed tasks yet.'}
           </Text>
         ) : (
           activeSections.map((section) => (
@@ -205,6 +328,15 @@ export const TaskListScreen = ({
                       meta={formatTaskMeta(task)}
                       priority={task.priority}
                       checked={task.isCompleted}
+                      onToggleComplete={
+                        task.isCompleted
+                          ? onReactivateTask
+                            ? () => onReactivateTask(task.id)
+                            : undefined
+                          : onCompleteTask
+                            ? () => onCompleteTask(task.id)
+                            : undefined
+                      }
                       onEdit={onEditTask ? () => onEditTask(task.id) : undefined}
                       onDelete={onDeleteTask ? () => openDeleteSheet(task) : undefined}
                       canDelete={canDeleteTask(task)}
@@ -305,6 +437,23 @@ const styles = StyleSheet.create({
   },
   headerActions: {
     flexDirection: 'row',
+  },
+  searchField: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.surfaceSoft,
+    borderRadius: radii.pill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    marginRight: spacing.md,
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: spacing.sm,
+    color: theme.colors.textPrimary,
+    fontSize: 13,
+    fontWeight: '600',
   },
   headerIcon: {
     width: 40,

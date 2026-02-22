@@ -9,6 +9,7 @@ export interface TaskRowProps {
   readonly meta: string;
   readonly priority: TaskPriority;
   readonly checked?: boolean;
+  readonly onToggleComplete?: () => void;
   readonly onEdit?: () => void;
   readonly onDelete?: () => void;
   readonly canDelete?: boolean;
@@ -28,10 +29,14 @@ export const TaskRow = ({
   meta,
   priority,
   checked = false,
+  onToggleComplete,
   onEdit,
   onDelete,
   canDelete = true,
 }: TaskRowProps) => {
+  const toggleIcon = checked ? 'rotate-ccw' : 'check';
+  const disableEdit = checked;
+
   return (
     <View style={styles.row}>
       <View style={[styles.priorityDot, { backgroundColor: priorityDotColor[priority] }]} />
@@ -44,8 +49,20 @@ export const TaskRow = ({
       <View style={styles.actions}>
         <Pressable
           style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]}
+          onPress={onToggleComplete}
+          disabled={!onToggleComplete}
+          hitSlop={8}
+        >
+          <AppIcon name={toggleIcon} size={ACTION_ICON_SIZE} color={theme.colors.textSecondary} />
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [
+            styles.actionButton,
+            disableEdit && styles.actionButtonDisabled,
+            pressed && styles.actionButtonPressed,
+          ]}
           onPress={onEdit}
-          disabled={!onEdit}
+          disabled={!onEdit || disableEdit}
           hitSlop={8}
         >
           <AppIcon name="edit" size={ACTION_ICON_SIZE} color={theme.colors.textSecondary} />

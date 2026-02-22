@@ -17,7 +17,7 @@ export interface NotificationsWindow {
 
 const DEFAULT_WINDOW: NotificationsWindow = {
   backDays: 3,
-  forwardHours: 1,
+  forwardHours: 0,
 };
 
 const toWindowRange = (window: NotificationsWindow) => {

@@ -17,6 +17,7 @@ const toNotification = (row: {
   taskId: row.task_id,
   notifyAt: row.notify_at,
   sentAt: row.sent_at,
+  isSent: !!row.sent_at,
   readAt: row.read_at,
   notificationIdentifier: row.notification_identifier,
   createdAt: row.created_at,
@@ -71,9 +72,8 @@ export const getNotificationsByUserIdInTaskRange = async (
     `SELECT tn.id, tn.user_id, tn.task_id, tn.notify_at, tn.sent_at, tn.read_at, tn.notification_identifier,
             tn.created_at, tn.updated_at
      FROM task_notifications tn
-     JOIN tasks t ON t.id = tn.task_id
-     WHERE tn.user_id = ? AND datetime(t.scheduled_at) BETWEEN datetime(?) AND datetime(?)
-     ORDER BY datetime(t.scheduled_at) DESC;`,
+     WHERE tn.user_id = ? AND datetime(tn.notify_at) BETWEEN datetime(?) AND datetime(?)
+     ORDER BY datetime(COALESCE(tn.sent_at, tn.notify_at)) DESC;`,
     [userId, fromISO, toISO],
   );
   return rows.map(toNotification);
@@ -163,6 +163,16 @@ export const clearNotificationIdentifier = async (id: string) => {
      SET notification_identifier = NULL, updated_at = ?
      WHERE id = ?;`,
     [now, id],
+  );
+};
+
+export const resetNotificationStateByTaskId = async (taskId: string) => {
+  const now = new Date().toISOString();
+  await executeSql(
+    `UPDATE task_notifications
+     SET sent_at = NULL, read_at = NULL, notification_identifier = NULL, updated_at = ?
+     WHERE task_id = ?;`,
+    [now, taskId],
   );
 };
 

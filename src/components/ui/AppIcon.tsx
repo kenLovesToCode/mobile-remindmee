@@ -17,6 +17,8 @@ export type AppIconName =
   | 'message-square'
   | 'moon'
   | 'plus'
+  | 'x'
+  | 'rotate-ccw'
   | 'search'
   | 'settings'
   | 'shield'
@@ -43,6 +45,8 @@ const iconMap: Record<AppIconName, keyof typeof Feather.glyphMap> = {
   'message-square': 'message-square',
   moon: 'moon',
   plus: 'plus',
+  x: 'x',
+  'rotate-ccw': 'rotate-ccw',
   search: 'search',
   settings: 'settings',
   shield: 'shield',

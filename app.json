@@ -5,10 +5,10 @@
     "scheme": "remindmee",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/remind-mee-logo.png",
     "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/remind-mee-logo.png",
       "resizeMode": "contain",
       "backgroundColor": "#101922"
     },
@@ -20,10 +20,11 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/remind-mee-logo.png",
         "backgroundColor": "#101922"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.kenlovestocode1337.remindmee"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -33,6 +34,12 @@
       "expo-router",
       "expo-notifications",
       "expo-sqlite"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b3268b27-8248-4e25-af55-f4a4a4d51ece"
+      }
+    }
   }
 }

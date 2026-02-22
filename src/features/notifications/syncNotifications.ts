@@ -6,8 +6,10 @@ import { getTasksByUserId } from '../../data/tasks/repository';
 import {
   clearNotificationIdentifier,
   deleteNotificationByTaskId,
+  getNotificationByTaskId,
   getNotificationsByUserId,
   markNotificationSent,
+  resetNotificationStateByTaskId,
   setNotificationIdentifier,
   upsertNotificationForTask,
 } from '../../data/notifications/repository';
@@ -51,23 +53,39 @@ const ensureChannel = async (Notifications: typeof import('expo-notifications'))
 
 const shouldSchedulePush = Constants.appOwnership !== 'expo' && Platform.OS !== 'web';
 
+const toMillis = (value: string) => new Date(value).getTime();
+
+export const resetNotificationForTask = async (taskId: string) => {
+  await initializeAuthDb();
+  const existing = await getNotificationByTaskId(taskId);
+  if (!existing) {
+    return;
+  }
+  const Notifications = shouldSchedulePush ? await getNotificationsModule() : null;
+  if (existing.notificationIdentifier && Notifications) {
+    await Notifications.cancelScheduledNotificationAsync(existing.notificationIdentifier).catch(() => {
+      return;
+    });
+  }
+  await resetNotificationStateByTaskId(taskId);
+};
+
 export const syncNotificationsForUser = async (userId: string) => {
   const Notifications = shouldSchedulePush ? await getNotificationsModule() : null;
-  const hasNotificationsApi =
+  const supportsPresentedNotifications =
     !!Notifications && typeof Notifications.getPresentedNotificationsAsync === 'function';
   await initializeAuthDb();
-  if (Notifications && hasNotificationsApi) {
+  if (Notifications) {
     await ensureChannel(Notifications);
   }
-  const hasPermission =
-    Notifications && hasNotificationsApi ? await ensurePermissions(Notifications) : false;
+  const hasPermission = Notifications ? await ensurePermissions(Notifications) : false;
   const tasks = await getTasksByUserId(userId);
   const existingNotifications = await getNotificationsByUserId(userId);
   const notificationByTaskId = new Map(existingNotifications.map((item) => [item.taskId, item]));
   const taskIds = new Set(tasks.map((task) => task.id));
   const now = new Date();
 
-  const delivered = hasNotificationsApi
+  const delivered = Notifications && supportsPresentedNotifications
     ? await Notifications.getPresentedNotificationsAsync()
     : [];
   const deliveredTaskIds = new Set(
@@ -95,8 +113,18 @@ export const syncNotificationsForUser = async (userId: string) => {
           return;
         });
       }
-      if (existing) {
+      if (!existing) {
+        continue;
+      }
+
+      const notifyAtReached = new Date(existing.notifyAt).getTime() <= now.getTime();
+      if (!notifyAtReached) {
         await deleteNotificationByTaskId(task.id);
+        continue;
+      }
+
+      if (existing.notificationIdentifier) {
+        await clearNotificationIdentifier(existing.id);
       }
       continue;
     }
@@ -107,6 +135,23 @@ export const syncNotificationsForUser = async (userId: string) => {
     const notificationId = existing?.id ?? (await createId());
     const createdAt = existing?.createdAt ?? new Date().toISOString();
     const scheduleChanged = !existing || existing.notifyAt !== notifyAtIso;
+    const taskChangedAfterNotification =
+      !!existing && toMillis(task.updatedAt) > toMillis(existing.updatedAt);
+
+    let currentSentAt = existing?.sentAt ?? null;
+    let currentNotificationIdentifier = existing?.notificationIdentifier ?? null;
+
+    // Any task update/reactivation should make it eligible to notify again and appear unread.
+    if (existing && (taskChangedAfterNotification || scheduleChanged)) {
+      if (currentNotificationIdentifier && Notifications) {
+        await Notifications.cancelScheduledNotificationAsync(currentNotificationIdentifier).catch(() => {
+          return;
+        });
+      }
+      await resetNotificationStateByTaskId(task.id);
+      currentSentAt = null;
+      currentNotificationIdentifier = null;
+    }
 
     if (scheduleChanged) {
       await upsertNotificationForTask({
@@ -116,11 +161,14 @@ export const syncNotificationsForUser = async (userId: string) => {
         notifyAt: notifyAtIso,
         createdAt,
       });
-      if (existing?.notificationIdentifier && Notifications) {
+      if (existing?.notificationIdentifier && Notifications && !taskChangedAfterNotification) {
         await Notifications.cancelScheduledNotificationAsync(existing.notificationIdentifier).catch(() => {
           return;
         });
+      }
+      if (existing && !taskChangedAfterNotification) {
         await clearNotificationIdentifier(existing.id);
+        currentNotificationIdentifier = null;
       }
     }
 
@@ -129,13 +177,16 @@ export const syncNotificationsForUser = async (userId: string) => {
       continue;
     }
 
-    if (existing?.sentAt) {
+    if (currentSentAt) {
       continue;
     }
 
-    if (notifyAtDate <= now) {
+    const msUntilTaskStarts = scheduledAtDate.getTime() - now.getTime();
+    const isWithinOneHourWindow = msUntilTaskStarts > 0 && msUntilTaskStarts <= ONE_HOUR_MS;
+
+    if (isWithinOneHourWindow) {
       if (deliveredTaskIds.has(task.id)) {
-        await markNotificationSent(notificationId, now.toISOString(), existing?.notificationIdentifier ?? null);
+        await markNotificationSent(notificationId, now.toISOString(), currentNotificationIdentifier);
         continue;
       }
       if (hasPermission && Notifications) {
@@ -148,7 +199,7 @@ export const syncNotificationsForUser = async (userId: string) => {
       continue;
     }
 
-    if (hasPermission && Notifications && (!existing?.notificationIdentifier || scheduleChanged)) {
+    if (hasPermission && Notifications && (!currentNotificationIdentifier || scheduleChanged)) {
       const identifier = await Notifications.scheduleNotificationAsync({
         content: buildNotificationContent(task),
         trigger: {

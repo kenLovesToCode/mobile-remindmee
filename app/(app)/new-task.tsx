@@ -6,7 +6,7 @@ import { useAuth } from '../../src/features/auth/AuthContext';
 import { createTask, updateTask } from '../../src/data/tasks/repository';
 import { createId } from '../../src/features/auth/ids';
 import { useTasks } from '../../src/features/tasks/useTasks';
-import { syncNotificationsForUser } from '../../src/features/notifications/syncNotifications';
+import { resetNotificationForTask, syncNotificationsForUser } from '../../src/features/notifications/syncNotifications';
 
 export default function NewTaskRoute() {
   const { user } = useAuth();
@@ -38,6 +38,7 @@ export default function NewTaskRoute() {
         priority: payload.priority,
         scheduledAt: payload.scheduledAt,
       });
+      await resetNotificationForTask(taskId);
     } else {
       await createTask({
         id: await createId(),

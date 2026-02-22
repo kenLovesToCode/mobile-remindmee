@@ -2,8 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 
 import { initializeAuthDb } from '../../data/auth/db';
-import { getTasksByUserId, getUpcomingTasksByUserId } from '../../data/tasks/repository';
+import { completePastDueTasks, getTasksByUserId, getUpcomingTasksByUserId } from '../../data/tasks/repository';
 import { Task } from '../../data/tasks/models';
+import { syncNotificationsForUser } from '../notifications/syncNotifications';
 
 export interface TaskSection {
   readonly title: string;
@@ -42,6 +43,11 @@ export const useTasks = (userId?: string) => {
     setError(undefined);
     try {
       await initializeAuthDb();
+      const nowIso = new Date().toISOString();
+      const completedCount = await completePastDueTasks(userId, nowIso);
+      if (completedCount > 0) {
+        await syncNotificationsForUser(userId);
+      }
       const [allTasks, upcomingTasks] = await Promise.all([
         getTasksByUserId(userId),
         getUpcomingTasksByUserId(userId, 5),
@@ -116,6 +122,13 @@ export const useTasks = (userId?: string) => {
     });
   }, [tasks]);
 
+  const completedTasks = useMemo<Task[]>(() => {
+    return tasks
+      .filter((task) => task.isCompleted)
+      .slice()
+      .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime());
+  }, [tasks]);
+
   const stats = useMemo<TaskStats>(() => {
     const now = new Date();
     const todayCount = tasks.filter((task) => isSameDay(new Date(task.scheduledAt), now)).length;
@@ -132,6 +145,7 @@ export const useTasks = (userId?: string) => {
     tasks,
     upcoming,
     upcomingTasks,
+    completedTasks,
     sections,
     stats,
     status,

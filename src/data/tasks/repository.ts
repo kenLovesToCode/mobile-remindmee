@@ -89,6 +89,36 @@ export const updateTask = async (input: UpdateTaskInput) => {
   );
 };
 
+export const markTaskCompleted = async (taskId: string) => {
+  const now = new Date().toISOString();
+  await executeSql(
+    `UPDATE tasks
+     SET is_completed = 1, updated_at = ?
+     WHERE id = ?;`,
+    [now, taskId],
+  );
+};
+
+export const reactivateTask = async (taskId: string) => {
+  const now = new Date().toISOString();
+  await executeSql(
+    `UPDATE tasks
+     SET is_completed = 0, updated_at = ?
+     WHERE id = ?;`,
+    [now, taskId],
+  );
+};
+
+export const completePastDueTasks = async (userId: string, nowIso: string) => {
+  const result = await executeSql(
+    `UPDATE tasks
+     SET is_completed = 1, updated_at = ?
+     WHERE user_id = ? AND is_completed = 0 AND datetime(scheduled_at) <= datetime(?);`,
+    [nowIso, userId, nowIso],
+  );
+  return result.changes ?? 0;
+};
+
 export const deleteTaskById = async (taskId: string) => {
   await executeSql(`DELETE FROM tasks WHERE id = ?;`, [taskId]);
 };
