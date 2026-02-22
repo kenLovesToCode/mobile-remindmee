@@ -27,6 +27,14 @@ export interface NewTaskModalScreenProps {
     priority: TaskPriority;
   }) => void;
   readonly onClose?: () => void;
+  readonly mode?: 'create' | 'edit';
+  readonly primaryLabel?: string;
+  readonly initialValues?: {
+    readonly title: string;
+    readonly description: string | null;
+    readonly scheduledAt: string;
+    readonly priority: TaskPriority;
+  };
 }
 
 type PriorityLevel = TaskPriority;
@@ -58,7 +66,13 @@ const DRAG_VELOCITY_THRESHOLD = 0.8;
 const DRAG_HANDLE_HEIGHT = 80;
 const CLOSE_ANIMATION_DURATION = 200;
 
-export const NewTaskModalScreen = ({ onSave, onClose }: NewTaskModalScreenProps) => {
+export const NewTaskModalScreen = ({
+  onSave,
+  onClose,
+  mode = 'create',
+  primaryLabel,
+  initialValues,
+}: NewTaskModalScreenProps) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -76,6 +90,18 @@ export const NewTaskModalScreen = ({ onSave, onClose }: NewTaskModalScreenProps)
   useEffect(() => {
     translateY.setValue(0);
   }, [translateY]);
+
+  useEffect(() => {
+    if (!initialValues) {
+      return;
+    }
+    const scheduled = new Date(initialValues.scheduledAt);
+    setTitle(initialValues.title);
+    setDescription(initialValues.description ?? '');
+    setSelectedDate(new Date(scheduled.getFullYear(), scheduled.getMonth(), scheduled.getDate()));
+    setSelectedTime(new Date(scheduled));
+    setSelectedPriority(initialValues.priority);
+  }, [initialValues]);
 
   const closeWithAnimation = useCallback(() => {
     if (!onClose) {
@@ -196,20 +222,26 @@ export const NewTaskModalScreen = ({ onSave, onClose }: NewTaskModalScreenProps)
         <View style={styles.sheetDragArea} {...panResponder.panHandlers}>
           <View style={styles.sheetHandle} />
           <View style={styles.sheetHeader}>
-            <Text style={styles.sheetTitle}>New Task</Text>
-            <Pressable
-              onPress={() => {
-                setTitle('');
-                setDescription('');
-                setSelectedDate(new Date());
-                setSelectedTime(createDefaultTime());
-                setSelectedPriority('Medium');
-                setStatus('idle');
-                setStatusMessage(undefined);
-              }}
-            >
-              <Text style={styles.clearText}>Clear</Text>
-            </Pressable>
+            <Text style={styles.sheetTitle}>{mode === 'edit' ? 'Edit Task' : 'New Task'}</Text>
+            {mode === 'edit' ? (
+              <Pressable onPress={closeWithAnimation}>
+                <Text style={styles.clearText}>Cancel</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                onPress={() => {
+                  setTitle('');
+                  setDescription('');
+                  setSelectedDate(new Date());
+                  setSelectedTime(createDefaultTime());
+                  setSelectedPriority('Medium');
+                  setStatus('idle');
+                  setStatusMessage(undefined);
+                }}
+              >
+                <Text style={styles.clearText}>Clear</Text>
+              </Pressable>
+            )}
           </View>
         </View>
         <ScrollView contentContainerStyle={styles.sheetContent} showsVerticalScrollIndicator={false}>
@@ -309,7 +341,11 @@ export const NewTaskModalScreen = ({ onSave, onClose }: NewTaskModalScreenProps)
               style={styles.cancelButton}
               onPress={closeWithAnimation}
             />
-            <ActionButton label="Save Task" onPress={handleSave} style={styles.saveButton} />
+            <ActionButton
+              label={primaryLabel ?? (mode === 'edit' ? 'Update Task' : 'Save Task')}
+              onPress={handleSave}
+              style={styles.saveButton}
+            />
           </View>
           <AuthStatusMessage status={status} message={statusMessage} align="center" />
         </ScrollView>

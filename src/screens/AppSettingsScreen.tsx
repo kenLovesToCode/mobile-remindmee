@@ -1,6 +1,7 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BottomNav } from '../components/BottomNav';
+import { ScreenScrollView } from '../components/layout/ScreenScrollView';
 import { SettingsRow } from '../components/SettingsRow';
 import { AppIcon } from '../components/ui/AppIcon';
 import { userProfile, settingsSections, ScreenKey } from '../data/mockData';
@@ -34,7 +35,11 @@ export const AppSettingsScreen = ({ onLogout, onNavigate, profile }: AppSettings
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScreenScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        basePaddingTop={spacing.xxxl}
+      >
         <Text style={styles.title}>Settings</Text>
 
         <View style={styles.profileCard}>
@@ -86,7 +91,7 @@ export const AppSettingsScreen = ({ onLogout, onNavigate, profile }: AppSettings
           <Text style={styles.footerText}>{activeProfile.appVersion}</Text>
           <Text style={styles.footerSubtext}>{activeProfile.appTagline}</Text>
         </View>
-      </ScrollView>
+      </ScreenScrollView>
 
       <BottomNav active="settings" onNavigate={onNavigate ?? noop} />
     </View>
@@ -100,7 +105,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: spacing.xxl,
-    paddingTop: spacing.xxxl,
     paddingBottom: 140,
   },
   title: {

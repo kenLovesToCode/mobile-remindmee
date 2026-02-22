@@ -50,6 +50,49 @@ export const createTask = async (input: CreateTaskInput) => {
   );
 };
 
+export const getTaskById = async (taskId: string) => {
+  const row = await querySingle<{
+    id: string;
+    user_id: string;
+    title: string;
+    description: string | null;
+    priority: string;
+    scheduled_at: string;
+    is_completed: number;
+    created_at: string;
+    updated_at: string;
+  }>(
+    `SELECT id, user_id, title, description, priority, scheduled_at, is_completed, created_at, updated_at
+     FROM tasks
+     WHERE id = ?
+     LIMIT 1;`,
+    [taskId],
+  );
+  return row ? toTask(row) : null;
+};
+
+export interface UpdateTaskInput {
+  readonly id: string;
+  readonly title: string;
+  readonly description: string | null;
+  readonly priority: TaskPriority;
+  readonly scheduledAt: string;
+}
+
+export const updateTask = async (input: UpdateTaskInput) => {
+  const now = new Date().toISOString();
+  await executeSql(
+    `UPDATE tasks
+     SET title = ?, description = ?, priority = ?, scheduled_at = ?, updated_at = ?
+     WHERE id = ?;`,
+    [input.title.trim(), input.description, input.priority, input.scheduledAt, now, input.id],
+  );
+};
+
+export const deleteTaskById = async (taskId: string) => {
+  await executeSql(`DELETE FROM tasks WHERE id = ?;`, [taskId]);
+};
+
 export const getTasksByUserId = async (userId: string) => {
   const rows = await queryAll<{
     id: string;

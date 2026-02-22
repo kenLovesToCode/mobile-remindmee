@@ -4,10 +4,11 @@ import { TaskListScreen } from '../../src/screens/TaskListScreen';
 import { ScreenKey } from '../../src/data/mockData';
 import { useAuth } from '../../src/features/auth/AuthContext';
 import { useTasks } from '../../src/features/tasks/useTasks';
+import { deleteTaskById } from '../../src/data/tasks/repository';
 
 export default function TasksRoute() {
   const { user } = useAuth();
-  const { sections, upcomingTasks } = useTasks(user?.id);
+  const { sections, upcomingTasks, refresh } = useTasks(user?.id);
 
   const handleNavigate = (screen: ScreenKey) => {
     if (screen === 'tasks') {
@@ -24,6 +25,11 @@ export default function TasksRoute() {
     <TaskListScreen
       onAddTask={() => router.push('/(app)/new-task')}
       onNavigate={handleNavigate}
+      onEditTask={(taskId) => router.push({ pathname: '/(app)/new-task', params: { taskId, mode: 'edit' } })}
+      onDeleteTask={async (taskId) => {
+        await deleteTaskById(taskId);
+        refresh();
+      }}
       sections={sections}
       upcomingTasks={upcomingTasks}
     />

@@ -3,13 +3,13 @@ import {
   Dimensions,
   PanResponder,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { useCallback, useMemo, useRef, useState } from 'react';
 
+import { ScreenScrollView } from '../components/layout/ScreenScrollView';
 import { SectionHeader } from '../components/SectionHeader';
 import { StatCard } from '../components/StatCard';
 import { ReminderCard } from '../components/ReminderCard';
@@ -142,7 +142,11 @@ export const HomeDashboardScreen = ({
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScreenScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        basePaddingTop={spacing.xxxl}
+      >
         <View style={styles.header}>
           <View style={styles.headerLeft}>
             <View style={styles.avatar}>
@@ -192,7 +196,7 @@ export const HomeDashboardScreen = ({
             )}
           </View>
         </View>
-      </ScrollView>
+      </ScreenScrollView>
 
       <Pressable style={styles.fab} onPress={onAddTask}>
         <AppIcon name="plus" size={FAB_ICON_SIZE} color="#ffffff" />
@@ -252,7 +256,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: spacing.xxl,
-    paddingTop: spacing.xxxl,
     paddingBottom: 120,
   },
   header: {

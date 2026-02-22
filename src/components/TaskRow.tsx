@@ -1,22 +1,40 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AppIcon } from './ui/AppIcon';
-import { radii, spacing, theme } from '../theme/colors';
+import { palette, radii, spacing, theme } from '../theme/colors';
+import { TaskPriority } from '../data/tasks/models';
 
 export interface TaskRowProps {
   readonly title: string;
   readonly meta: string;
+  readonly priority: TaskPriority;
   readonly checked?: boolean;
+  readonly onEdit?: () => void;
+  readonly onDelete?: () => void;
+  readonly canDelete?: boolean;
 }
 
-const CHECK_ICON_SIZE = 12;
+const ACTION_ICON_SIZE = 16;
+const PRIORITY_DOT_SIZE = 12;
 
-export const TaskRow = ({ title, meta, checked = false }: TaskRowProps) => {
+const priorityDotColor: Record<TaskPriority, string> = {
+  High: palette.red500,
+  Medium: palette.amber500,
+  Low: palette.green500,
+};
+
+export const TaskRow = ({
+  title,
+  meta,
+  priority,
+  checked = false,
+  onEdit,
+  onDelete,
+  canDelete = true,
+}: TaskRowProps) => {
   return (
     <View style={styles.row}>
-      <View style={[styles.checkbox, checked && styles.checkboxChecked]}>
-        {checked ? <AppIcon name="check" size={CHECK_ICON_SIZE} color="#ffffff" /> : null}
-      </View>
+      <View style={[styles.priorityDot, { backgroundColor: priorityDotColor[priority] }]} />
       <View style={styles.body}>
         <Text style={[styles.title, checked && styles.titleChecked]} numberOfLines={1}>
           {title}
@@ -24,8 +42,26 @@ export const TaskRow = ({ title, meta, checked = false }: TaskRowProps) => {
         <Text style={styles.meta}>{meta}</Text>
       </View>
       <View style={styles.actions}>
-        <Text style={styles.actionText}>edit</Text>
-        <Text style={styles.actionText}>del</Text>
+        <Pressable
+          style={({ pressed }) => [styles.actionButton, pressed && styles.actionButtonPressed]}
+          onPress={onEdit}
+          disabled={!onEdit}
+          hitSlop={8}
+        >
+          <AppIcon name="edit" size={ACTION_ICON_SIZE} color={theme.colors.textSecondary} />
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [
+            styles.actionButton,
+            !canDelete && styles.actionButtonDisabled,
+            pressed && styles.actionButtonPressed,
+          ]}
+          onPress={canDelete ? onDelete : undefined}
+          disabled={!onDelete || !canDelete}
+          hitSlop={8}
+        >
+          <AppIcon name="trash" size={ACTION_ICON_SIZE} color={theme.colors.textSecondary} />
+        </Pressable>
       </View>
     </View>
   );
@@ -41,19 +77,11 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     padding: spacing.lg,
   },
-  checkbox: {
-    width: 24,
-    height: 24,
+  priorityDot: {
+    width: PRIORITY_DOT_SIZE,
+    height: PRIORITY_DOT_SIZE,
     borderRadius: radii.pill,
-    borderWidth: 2,
-    borderColor: theme.colors.textSecondary,
-    alignItems: 'center',
-    justifyContent: 'center',
     marginRight: spacing.md,
-  },
-  checkboxChecked: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
   },
   body: {
     flex: 1,
@@ -74,10 +102,20 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: 'row',
+    alignItems: 'center',
   },
-  actionText: {
-    color: theme.colors.textSecondary,
-    fontSize: 11,
-    marginLeft: spacing.sm,
+  actionButton: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: spacing.xs,
+  },
+  actionButtonPressed: {
+    opacity: 0.7,
+  },
+  actionButtonDisabled: {
+    opacity: 0.4,
   },
 });
