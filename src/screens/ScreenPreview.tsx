@@ -8,6 +8,7 @@ import { LoginScreen } from './LoginScreen';
 import { SignupScreen } from './SignupScreen';
 import { ForgotPasswordScreen } from './ForgotPasswordScreen';
 import { EmailSentScreen } from './EmailSentScreen';
+import { ResetPasswordScreen } from './ResetPasswordScreen';
 import { useScreenPreview } from '../hooks/useScreenPreview';
 import { theme } from '../theme/colors';
 
@@ -35,12 +36,19 @@ export const ScreenPreview = ({}: ScreenPreviewProps) => {
         )}
         {activeScreen === 'forgotPassword' && (
           <ForgotPasswordScreen
-            onSendReset={() => navigateTo('emailSent')}
+            onSendReset={() => navigateTo('resetPassword')}
             onBackToLogin={() => navigateTo('login')}
           />
         )}
         {activeScreen === 'emailSent' && (
           <EmailSentScreen onBackToLogin={() => navigateTo('login')} onResendEmail={() => {}} />
+        )}
+        {activeScreen === 'resetPassword' && (
+          <ResetPasswordScreen
+            email="you@remindmee.app"
+            onReset={() => navigateTo('login')}
+            onBackToLogin={() => navigateTo('login')}
+          />
         )}
         {activeScreen === 'tasks' && (
           <TaskListScreen onAddTask={() => navigateTo('newTask')} onNavigate={navigateTo} />

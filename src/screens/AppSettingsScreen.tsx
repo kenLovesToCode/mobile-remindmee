@@ -6,15 +6,32 @@ import { AppIcon } from '../components/ui/AppIcon';
 import { userProfile, settingsSections, ScreenKey } from '../data/mockData';
 import { palette, radii, spacing, theme } from '../theme/colors';
 
+export interface SettingsProfile {
+  readonly name: string;
+  readonly email: string;
+  readonly planLabel?: string;
+  readonly appVersion?: string;
+  readonly appTagline?: string;
+}
+
 export interface AppSettingsScreenProps {
   readonly onLogout?: () => void;
   readonly onNavigate?: (screen: ScreenKey) => void;
+  readonly profile?: SettingsProfile;
 }
 
 const CHEVRON_SIZE = 18;
 const noop = () => {};
 
-export const AppSettingsScreen = ({ onLogout, onNavigate }: AppSettingsScreenProps) => {
+export const AppSettingsScreen = ({ onLogout, onNavigate, profile }: AppSettingsScreenProps) => {
+  const activeProfile = {
+    name: profile?.name ?? userProfile.name,
+    email: profile?.email ?? userProfile.email,
+    planLabel: profile?.planLabel ?? userProfile.planLabel,
+    appVersion: profile?.appVersion ?? userProfile.appVersion,
+    appTagline: profile?.appTagline ?? userProfile.appTagline,
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -25,10 +42,10 @@ export const AppSettingsScreen = ({ onLogout, onNavigate }: AppSettingsScreenPro
             <Text style={styles.avatarText}>A</Text>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{userProfile.name}</Text>
-            <Text style={styles.profileEmail}>{userProfile.email}</Text>
+            <Text style={styles.profileName}>{activeProfile.name}</Text>
+            <Text style={styles.profileEmail}>{activeProfile.email}</Text>
             <View style={styles.planBadge}>
-              <Text style={styles.planText}>{userProfile.planLabel}</Text>
+              <Text style={styles.planText}>{activeProfile.planLabel}</Text>
             </View>
           </View>
           <AppIcon name="chevron-right" size={CHEVRON_SIZE} color={theme.colors.textSecondary} />
@@ -66,8 +83,8 @@ export const AppSettingsScreen = ({ onLogout, onNavigate }: AppSettingsScreenPro
         </Pressable>
 
         <View style={styles.footer}>
-          <Text style={styles.footerText}>{userProfile.appVersion}</Text>
-          <Text style={styles.footerSubtext}>{userProfile.appTagline}</Text>
+          <Text style={styles.footerText}>{activeProfile.appVersion}</Text>
+          <Text style={styles.footerSubtext}>{activeProfile.appTagline}</Text>
         </View>
       </ScrollView>
 

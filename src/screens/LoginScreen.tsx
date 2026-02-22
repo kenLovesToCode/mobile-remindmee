@@ -9,8 +9,13 @@ import { AuthTextLink } from '../components/ui/AuthTextLink';
 import { radii, spacing, theme } from '../theme/colors';
 import { AuthStatus } from './authTypes';
 
+export interface LoginCredentials {
+  readonly email: string;
+  readonly password: string;
+}
+
 export interface LoginScreenProps {
-  readonly onLogin?: () => void;
+  readonly onLogin?: (input: LoginCredentials) => void;
   readonly onForgotPassword?: () => void;
   readonly onSignup?: () => void;
   readonly status?: AuthStatus;
@@ -57,7 +62,15 @@ export const LoginScreen = ({
 
           <ActionButton
             label={isLoading ? 'Logging In...' : 'Log In'}
-            onPress={isLoading ? undefined : onLogin}
+            onPress={
+              isLoading
+                ? undefined
+                : () =>
+                    onLogin?.({
+                      email,
+                      password,
+                    })
+            }
             style={isLoading ? styles.buttonLoading : undefined}
           />
 

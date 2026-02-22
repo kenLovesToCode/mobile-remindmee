@@ -4,6 +4,8 @@ import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 
 import { theme } from '../src/theme/colors';
+import { AuthProvider } from '../src/features/auth/AuthContext';
+import { AuthGate } from '../src/features/auth/AuthGate';
 
 export default function RootLayout() {
   const navigationTheme = {
@@ -22,18 +24,21 @@ export default function RootLayout() {
   return (
     <ThemeProvider value={navigationTheme}>
       <StatusBar style="light" />
-      <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: theme.colors.background },
-            animation: 'fade',
-          }}
-        >
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(app)" options={{ headerShown: false }} />
-        </Stack>
-      </View>
+      <AuthProvider>
+        <AuthGate />
+        <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: theme.colors.background },
+              animation: 'fade',
+            }}
+          >
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(app)" options={{ headerShown: false }} />
+          </Stack>
+        </View>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

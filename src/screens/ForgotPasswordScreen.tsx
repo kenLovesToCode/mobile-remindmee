@@ -10,7 +10,7 @@ import { spacing, theme } from '../theme/colors';
 import { AuthStatus } from './authTypes';
 
 export interface ForgotPasswordScreenProps {
-  readonly onSendReset?: () => void;
+  readonly onSendReset?: (email: string) => void;
   readonly onBackToLogin?: () => void;
   readonly status?: AuthStatus;
   readonly statusMessage?: string;
@@ -32,7 +32,7 @@ export const ForgotPasswordScreen = ({
 
         <Text style={styles.headline}>Reset your password</Text>
         <Text style={styles.subtext}>
-          Enter your email address and we’ll send you a link to reset your password.
+          Enter your email address and we’ll help you reset your password.
         </Text>
 
         <View style={styles.form}>
@@ -48,7 +48,7 @@ export const ForgotPasswordScreen = ({
 
           <ActionButton
             label={isLoading ? 'Sending...' : 'Send reset link'}
-            onPress={isLoading ? undefined : onSendReset}
+            onPress={isLoading ? undefined : () => onSendReset?.(email)}
             style={isLoading ? styles.buttonLoading : undefined}
           />
 

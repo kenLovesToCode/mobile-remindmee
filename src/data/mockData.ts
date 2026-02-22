@@ -89,4 +89,5 @@ export type ScreenKey =
   | 'login'
   | 'signup'
   | 'forgotPassword'
-  | 'emailSent';
+  | 'emailSent'
+  | 'resetPassword';

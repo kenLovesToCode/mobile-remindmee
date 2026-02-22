@@ -8,8 +8,15 @@ import { AuthTextField } from '../components/ui/AuthTextField';
 import { radii, spacing, theme } from '../theme/colors';
 import { AuthStatus } from './authTypes';
 
+export interface SignupCredentials {
+  readonly fullName: string;
+  readonly email: string;
+  readonly password: string;
+  readonly confirmPassword: string;
+}
+
 export interface SignupScreenProps {
-  readonly onCreateAccount?: () => void;
+  readonly onCreateAccount?: (input: SignupCredentials) => void;
   readonly onLogin?: () => void;
   readonly status?: AuthStatus;
   readonly statusMessage?: string;
@@ -72,7 +79,17 @@ export const SignupScreen = ({
 
           <ActionButton
             label={isLoading ? 'Creating Account...' : 'Create Account'}
-            onPress={isLoading ? undefined : onCreateAccount}
+            onPress={
+              isLoading
+                ? undefined
+                : () =>
+                    onCreateAccount?.({
+                      fullName,
+                      email,
+                      password,
+                      confirmPassword,
+                    })
+            }
             style={isLoading ? styles.buttonLoading : undefined}
           />
 
