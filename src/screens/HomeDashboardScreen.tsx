@@ -3,6 +3,7 @@ import {
   Dimensions,
   PanResponder,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -22,6 +23,8 @@ import { palette, radii, spacing, theme } from '../theme/colors';
 export interface HomeDashboardScreenProps {
   readonly onAddTask?: () => void;
   readonly onNavigate?: (screen: ScreenKey) => void;
+  readonly onOpenNotifications?: () => void;
+  readonly unreadNotifications?: number;
   readonly upcomingTasks?: Task[];
   readonly upcomingLimit?: number;
   readonly stats?: {
@@ -55,6 +58,8 @@ const formatDateTimeLabel = (date: Date) =>
 export const HomeDashboardScreen = ({
   onAddTask,
   onNavigate,
+  onOpenNotifications,
+  unreadNotifications = 0,
   upcomingTasks = [],
   upcomingLimit = 10,
   stats = { today: 0, scheduled: 0, done: 0 },
@@ -157,8 +162,9 @@ export const HomeDashboardScreen = ({
               <Text style={styles.date}>{userProfile.dateLabel}</Text>
             </View>
           </View>
-          <Pressable style={styles.iconButton}>
+          <Pressable style={styles.iconButton} onPress={onOpenNotifications} disabled={!onOpenNotifications}>
             <AppIcon name="bell" size={HEADER_ICON_SIZE} color={theme.colors.textSecondary} />
+            {unreadNotifications > 0 ? <View style={styles.unreadBadge} /> : null}
           </Pressable>
         </View>
 
@@ -300,6 +306,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: theme.colors.surfaceSoft,
+    position: 'relative',
+  },
+  unreadBadge: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 8,
+    height: 8,
+    borderRadius: radii.pill,
+    backgroundColor: palette.red500,
   },
   sectionEyebrow: {
     textTransform: 'uppercase',

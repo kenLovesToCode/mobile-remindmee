@@ -6,6 +6,7 @@ import { useAuth } from '../../src/features/auth/AuthContext';
 import { createTask, updateTask } from '../../src/data/tasks/repository';
 import { createId } from '../../src/features/auth/ids';
 import { useTasks } from '../../src/features/tasks/useTasks';
+import { syncNotificationsForUser } from '../../src/features/notifications/syncNotifications';
 
 export default function NewTaskRoute() {
   const { user } = useAuth();
@@ -48,6 +49,7 @@ export default function NewTaskRoute() {
       });
     }
     refresh();
+    await syncNotificationsForUser(user.id);
     router.back();
   };
 

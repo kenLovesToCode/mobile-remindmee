@@ -5,6 +5,7 @@ import { ScreenKey } from '../../src/data/mockData';
 import { useAuth } from '../../src/features/auth/AuthContext';
 import { useTasks } from '../../src/features/tasks/useTasks';
 import { deleteTaskById } from '../../src/data/tasks/repository';
+import { syncNotificationsForUser } from '../../src/features/notifications/syncNotifications';
 
 export default function TasksRoute() {
   const { user } = useAuth();
@@ -29,6 +30,9 @@ export default function TasksRoute() {
       onDeleteTask={async (taskId) => {
         await deleteTaskById(taskId);
         refresh();
+        if (user?.id) {
+          await syncNotificationsForUser(user.id);
+        }
       }}
       sections={sections}
       upcomingTasks={upcomingTasks}

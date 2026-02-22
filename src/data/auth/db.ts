@@ -57,6 +57,29 @@ const CREATE_TABLE_STATEMENTS: SqlStatement[] = [
     sql: `CREATE INDEX IF NOT EXISTS idx_tasks_user_scheduled
       ON tasks(user_id, scheduled_at);`,
   },
+  {
+    sql: `CREATE TABLE IF NOT EXISTS task_notifications (
+      id TEXT PRIMARY KEY NOT NULL,
+      user_id TEXT NOT NULL,
+      task_id TEXT NOT NULL UNIQUE,
+      notify_at TEXT NOT NULL,
+      sent_at TEXT,
+      read_at TEXT,
+      notification_identifier TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE
+    );`,
+  },
+  {
+    sql: `CREATE INDEX IF NOT EXISTS idx_task_notifications_user_notify_at
+      ON task_notifications(user_id, notify_at);`,
+  },
+  {
+    sql: `CREATE INDEX IF NOT EXISTS idx_task_notifications_task_id
+      ON task_notifications(task_id);`,
+  },
 ];
 
 let dbInstance: SQLiteDatabase | null = null;
