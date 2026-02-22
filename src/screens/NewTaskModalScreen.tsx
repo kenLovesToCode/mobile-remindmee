@@ -1,4 +1,17 @@
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Animated,
+  Dimensions,
+  PanResponder,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 import { ActionButton } from '../components/ActionButton';
 import { newTaskDefaults } from '../data/mockData';
@@ -9,7 +22,127 @@ export interface NewTaskModalScreenProps {
   readonly onClose?: () => void;
 }
 
+type PriorityLevel = 'Low' | 'Medium' | 'High';
+
+const createDefaultTime = () => {
+  const time = new Date();
+  time.setHours(17, 0, 0, 0);
+  return time;
+};
+
+const isSameDay = (left: Date, right: Date) =>
+  left.getFullYear() === right.getFullYear() &&
+  left.getMonth() === right.getMonth() &&
+  left.getDate() === right.getDate();
+
+const formatDateLabel = (date: Date) => {
+  const today = new Date();
+  if (isSameDay(date, today)) {
+    return 'Today';
+  }
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+};
+
+const formatTimeLabel = (date: Date) =>
+  date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
+const DRAG_DISMISS_DISTANCE = 120;
+const DRAG_VELOCITY_THRESHOLD = 0.8;
+const DRAG_HANDLE_HEIGHT = 80;
+const CLOSE_ANIMATION_DURATION = 200;
+
 export const NewTaskModalScreen = ({ onSave, onClose }: NewTaskModalScreenProps) => {
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedTime, setSelectedTime] = useState(createDefaultTime());
+  const [selectedPriority, setSelectedPriority] = useState<PriorityLevel>('Medium');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const screenHeight = useMemo(() => Dimensions.get('window').height, []);
+  const translateY = useRef(new Animated.Value(0)).current;
+
+  const priorities = newTaskDefaults.priorities as PriorityLevel[];
+
+  useEffect(() => {
+    translateY.setValue(0);
+  }, [translateY]);
+
+  const closeWithAnimation = useCallback(() => {
+    if (!onClose) {
+      Animated.spring(translateY, {
+        toValue: 0,
+        useNativeDriver: true,
+      }).start();
+      return;
+    }
+    Animated.timing(translateY, {
+      toValue: screenHeight,
+      duration: CLOSE_ANIMATION_DURATION,
+      useNativeDriver: true,
+    }).start(() => {
+      onClose();
+    });
+  }, [onClose, screenHeight, translateY]);
+
+  const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    if (event.type === 'set' && date) {
+      setSelectedDate(date);
+    } else if (Platform.OS === 'ios' && date) {
+      setSelectedDate(date);
+    }
+  };
+
+  const handleTimeChange = (event: DateTimePickerEvent, date?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowTimePicker(false);
+    }
+    if (event.type === 'set' && date) {
+      setSelectedTime(date);
+    } else if (Platform.OS === 'ios' && date) {
+      setSelectedTime(date);
+    }
+  };
+
+  const openDatePicker = () => {
+    setShowTimePicker(false);
+    setShowDatePicker((prev) => !prev);
+  };
+
+  const openTimePicker = () => {
+    setShowDatePicker(false);
+    setShowTimePicker((prev) => !prev);
+  };
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (event, gestureState) => {
+        if (gestureState.dy <= 6 || Math.abs(gestureState.dx) > 12) {
+          return false;
+        }
+        return event.nativeEvent.locationY <= DRAG_HANDLE_HEIGHT;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy > 0) {
+          translateY.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        const shouldClose =
+          gestureState.dy > DRAG_DISMISS_DISTANCE || gestureState.vy > DRAG_VELOCITY_THRESHOLD;
+        if (shouldClose) {
+          closeWithAnimation();
+          return;
+        }
+        Animated.spring(translateY, {
+          toValue: 0,
+          useNativeDriver: true,
+        }).start();
+      },
+    }),
+  ).current;
+
   return (
     <View style={styles.container}>
       <View style={styles.backdropList}>
@@ -19,15 +152,17 @@ export const NewTaskModalScreen = ({ onSave, onClose }: NewTaskModalScreenProps)
         <View style={styles.listCard} />
       </View>
 
-      <View style={styles.overlay} />
+      <Pressable style={styles.overlay} onPress={closeWithAnimation} />
 
-      <View style={styles.sheet}>
-        <View style={styles.sheetHandle} />
-        <View style={styles.sheetHeader}>
+      <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
+        <View style={styles.sheetDragArea} {...panResponder.panHandlers}>
+          <View style={styles.sheetHandle} />
+          <View style={styles.sheetHeader}>
           <Text style={styles.sheetTitle}>New Task</Text>
-          <Pressable onPress={onClose}>
+          <Pressable onPress={closeWithAnimation}>
             <Text style={styles.clearText}>Clear</Text>
           </Pressable>
+        </View>
         </View>
         <ScrollView contentContainerStyle={styles.sheetContent} showsVerticalScrollIndicator={false}>
           <View style={styles.fieldBlock}>
@@ -52,47 +187,80 @@ export const NewTaskModalScreen = ({ onSave, onClose }: NewTaskModalScreenProps)
           <View style={styles.fieldBlock}>
             <Text style={styles.fieldLabel}>Schedule</Text>
             <View style={styles.scheduleRow}>
-              {newTaskDefaults.schedule.map((label, index) => (
-                <View
-                  key={label}
-                  style={[styles.scheduleButton, index === 0 && styles.scheduleButtonSpacing]}
-                >
-                  <Text style={styles.scheduleText}>{label}</Text>
-                </View>
-              ))}
+              <Pressable
+                onPress={openDatePicker}
+                style={({ pressed }) => [
+                  styles.scheduleButton,
+                  styles.scheduleButtonSpacing,
+                  pressed && styles.scheduleButtonPressed,
+                ]}
+              >
+                <Text style={styles.scheduleText}>{formatDateLabel(selectedDate)}</Text>
+              </Pressable>
+              <Pressable
+                onPress={openTimePicker}
+                style={({ pressed }) => [styles.scheduleButton, pressed && styles.scheduleButtonPressed]}
+              >
+                <Text style={styles.scheduleText}>{formatTimeLabel(selectedTime)}</Text>
+              </Pressable>
             </View>
+            {showDatePicker ? (
+              <View style={styles.pickerWrap}>
+                <DateTimePicker
+                  value={selectedDate}
+                  mode="date"
+                  display={Platform.OS === 'ios' ? 'inline' : 'default'}
+                  onChange={handleDateChange}
+                />
+              </View>
+            ) : null}
+            {showTimePicker ? (
+              <View style={styles.pickerWrap}>
+                <DateTimePicker
+                  value={selectedTime}
+                  mode="time"
+                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                  onChange={handleTimeChange}
+                />
+              </View>
+            ) : null}
           </View>
 
           <View style={styles.fieldBlock}>
             <Text style={styles.fieldLabel}>Priority</Text>
             <View style={styles.priorityRow}>
-              {newTaskDefaults.priorities.map((priority) => (
-                <View
-                  key={priority}
-                  style={[
-                    styles.priorityButton,
-                    priority === 'Medium' && styles.priorityButtonActive,
-                  ]}
-                >
-                  <Text
-                    style={[
-                      styles.priorityText,
-                      priority === 'Medium' && styles.priorityTextActive,
+              {priorities.map((priority) => {
+                const isActive = priority === selectedPriority;
+                return (
+                  <Pressable
+                    key={priority}
+                    onPress={() => setSelectedPriority(priority)}
+                    style={({ pressed }) => [
+                      styles.priorityButton,
+                      isActive && styles.priorityButtonActive,
+                      pressed && styles.priorityButtonPressed,
                     ]}
                   >
-                    {priority}
-                  </Text>
-                </View>
-              ))}
+                    <Text style={[styles.priorityText, isActive && styles.priorityTextActive]}>
+                      {priority}
+                    </Text>
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
 
           <View style={styles.actionsRow}>
-            <ActionButton label="Cancel" variant="ghost" style={styles.cancelButton} onPress={onClose} />
+            <ActionButton
+              label="Cancel"
+              variant="ghost"
+              style={styles.cancelButton}
+              onPress={closeWithAnimation}
+            />
             <ActionButton label="Save Task" onPress={onSave} style={styles.saveButton} />
           </View>
         </ScrollView>
-      </View>
+      </Animated.View>
     </View>
   );
 };
@@ -137,13 +305,15 @@ const styles = StyleSheet.create({
     borderTopColor: theme.colors.border,
     maxHeight: '90%',
   },
+  sheetDragArea: {
+    paddingTop: spacing.sm,
+  },
   sheetHandle: {
     alignSelf: 'center',
     width: 48,
     height: 6,
     borderRadius: radii.pill,
     backgroundColor: theme.colors.textSecondary,
-    marginTop: spacing.sm,
   },
   sheetHeader: {
     flexDirection: 'row',
@@ -202,6 +372,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  scheduleButtonPressed: {
+    opacity: 0.8,
+  },
   scheduleButtonSpacing: {
     marginRight: spacing.md,
   },
@@ -209,6 +382,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
     color: theme.colors.textSecondary,
+  },
+  pickerWrap: {
+    marginTop: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surfaceSoft,
+    overflow: 'hidden',
   },
   priorityRow: {
     flexDirection: 'row',
@@ -222,6 +403,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: spacing.md,
     borderRadius: radii.md,
+  },
+  priorityButtonPressed: {
+    opacity: 0.8,
   },
   priorityButtonActive: {
     backgroundColor: theme.colors.surface,

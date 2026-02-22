@@ -53,7 +53,6 @@ export const quickProjects = [
 export const newTaskDefaults = {
   titlePlaceholder: 'What needs to be done?',
   descriptionPlaceholder: 'Add notes, links, or context...',
-  schedule: ['Today', '5:00 PM'],
   priorities: ['Low', 'Medium', 'High'],
 };
 
