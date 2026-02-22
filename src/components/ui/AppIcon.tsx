@@ -12,6 +12,7 @@ export type AppIconName =
   | 'help-circle'
   | 'home'
   | 'lock'
+  | 'mail'
   | 'message-square'
   | 'moon'
   | 'plus'

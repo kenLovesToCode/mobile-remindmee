@@ -9,8 +9,8 @@ export interface UseScreenPreviewResult {
 }
 
 export const useScreenPreview = (): UseScreenPreviewResult => {
-  const defaultScreen: ScreenKey = 'home';
-  const fallbackScreen: ScreenKey = 'tasks';
+  const defaultScreen: ScreenKey = 'login';
+  const fallbackScreen: ScreenKey = 'home';
   const [screen, setScreen] = useState<ScreenKey>(defaultScreen);
   const [previousScreen, setPreviousScreen] = useState<ScreenKey>(defaultScreen);
 

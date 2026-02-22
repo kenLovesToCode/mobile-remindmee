@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { BottomNav } from '../components/BottomNav';
 import { SettingsRow } from '../components/SettingsRow';
@@ -57,11 +57,13 @@ export const AppSettingsScreen = ({ onLogout, onNavigate }: AppSettingsScreenPro
           ))}
         </View>
 
-        <View style={styles.logoutWrapper}>
-          <Text style={styles.logout} onPress={onLogout}>
-            Log Out
-          </Text>
-        </View>
+        <Pressable
+          style={({ pressed }) => [styles.logoutWrapper, pressed && styles.logoutPressed]}
+          onPress={onLogout}
+          disabled={!onLogout}
+        >
+          <Text style={styles.logout}>Log Out</Text>
+        </Pressable>
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>{userProfile.appVersion}</Text>
@@ -174,6 +176,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(239, 68, 68, 0.08)',
     paddingVertical: spacing.lg,
     alignItems: 'center',
+  },
+  logoutPressed: {
+    opacity: 0.85,
   },
   logout: {
     color: palette.red500,

@@ -4,6 +4,10 @@ import { HomeDashboardScreen } from './HomeDashboardScreen';
 import { TaskListScreen } from './TaskListScreen';
 import { NewTaskModalScreen } from './NewTaskModalScreen';
 import { AppSettingsScreen } from './AppSettingsScreen';
+import { LoginScreen } from './LoginScreen';
+import { SignupScreen } from './SignupScreen';
+import { ForgotPasswordScreen } from './ForgotPasswordScreen';
+import { EmailSentScreen } from './EmailSentScreen';
 import { useScreenPreview } from '../hooks/useScreenPreview';
 import { theme } from '../theme/colors';
 
@@ -18,6 +22,25 @@ export const ScreenPreview = ({}: ScreenPreviewProps) => {
       <View style={styles.screenWrap}>
         {activeScreen === 'home' && (
           <HomeDashboardScreen onAddTask={() => navigateTo('newTask')} onNavigate={navigateTo} />
+        )}
+        {activeScreen === 'login' && (
+          <LoginScreen
+            onLogin={() => navigateTo('home')}
+            onForgotPassword={() => navigateTo('forgotPassword')}
+            onSignup={() => navigateTo('signup')}
+          />
+        )}
+        {activeScreen === 'signup' && (
+          <SignupScreen onCreateAccount={() => navigateTo('home')} onLogin={() => navigateTo('login')} />
+        )}
+        {activeScreen === 'forgotPassword' && (
+          <ForgotPasswordScreen
+            onSendReset={() => navigateTo('emailSent')}
+            onBackToLogin={() => navigateTo('login')}
+          />
+        )}
+        {activeScreen === 'emailSent' && (
+          <EmailSentScreen onBackToLogin={() => navigateTo('login')} onResendEmail={() => {}} />
         )}
         {activeScreen === 'tasks' && (
           <TaskListScreen onAddTask={() => navigateTo('newTask')} onNavigate={navigateTo} />

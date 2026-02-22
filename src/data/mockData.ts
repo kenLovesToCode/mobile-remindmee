@@ -81,4 +81,12 @@ export const settingsSections = [
   },
 ] as const;
 
-export type ScreenKey = 'home' | 'tasks' | 'newTask' | 'settings';
+export type ScreenKey =
+  | 'home'
+  | 'tasks'
+  | 'newTask'
+  | 'settings'
+  | 'login'
+  | 'signup'
+  | 'forgotPassword'
+  | 'emailSent';
