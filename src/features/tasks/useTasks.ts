@@ -118,7 +118,7 @@ export const useTasks = (userId?: string) => {
         return false;
       }
       const scheduled = new Date(task.scheduledAt);
-      return scheduled.getTime() >= now.getTime() && !isSameDay(scheduled, now);
+      return scheduled.getTime() > now.getTime();
     });
   }, [tasks]);
 

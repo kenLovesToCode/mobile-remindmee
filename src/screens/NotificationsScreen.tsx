@@ -90,28 +90,23 @@ export const NotificationsScreen = ({
                   ]}
                   onPress={onMarkRead ? () => onMarkRead(notification.id) : undefined}
                 >
-                  <View style={styles.rowHeader}>
-                    <Text style={styles.cardTitle} numberOfLines={1}>
-                      {task?.title ?? 'Task'}
-                    </Text>
-                    {isUnread ? <View style={styles.unreadDot} /> : null}
-                  </View>
-                  <View style={styles.timeBlock}>
-                    <Text style={styles.timeLabel}>Reminder</Text>
-                    <Text style={styles.timeValue}>{formatLabel(task?.scheduledAt)}</Text>
-                    <Text style={styles.timeHint}>{formatRelative(task?.scheduledAt)}</Text>
-                  </View>
-                  <View style={styles.timeDivider} />
-                  <View style={styles.timeBlock}>
-                    <Text style={styles.timeLabel}>
-                      {notification.sentAt ? 'Notified' : 'Will notify'}
-                    </Text>
-                    <Text style={styles.timeValue}>
-                      {formatLabel(notification.sentAt ?? notification.notifyAt)}
-                    </Text>
-                    <Text style={styles.timeHint}>
-                      {formatRelative(notification.sentAt ?? notification.notifyAt)}
-                    </Text>
+                  <View style={styles.row}>
+                    <View style={styles.textColumn}>
+                      <Text style={styles.cardTitle} numberOfLines={1}>
+                        {task?.title ?? 'Task'}
+                      </Text>
+                      <Text style={styles.timeValue} numberOfLines={1}>
+                        {formatLabel(task?.scheduledAt)}
+                      </Text>
+                    </View>
+                    <View style={styles.metaColumn}>
+                      <View style={styles.relativeRow}>
+                        <Text style={styles.timeHint} numberOfLines={1}>
+                          {formatRelative(task?.scheduledAt)}
+                        </Text>
+                        {isUnread ? <View style={styles.unreadDot} /> : null}
+                      </View>
+                    </View>
                   </View>
                 </Pressable>
               );
@@ -177,30 +172,22 @@ const styles = StyleSheet.create({
   cardPressed: {
     opacity: 0.8,
   },
-  rowHeader: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
   cardTitle: {
     fontSize: 15,
     fontWeight: '700',
     color: theme.colors.textPrimary,
+  },
+  textColumn: {
     flex: 1,
     marginRight: spacing.md,
   },
-  cardMeta: {
-    marginTop: spacing.sm,
-  },
-  timeBlock: {
-    marginTop: spacing.sm,
-  },
-  timeLabel: {
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    color: theme.colors.textSecondary,
+  metaColumn: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
   },
   timeValue: {
     marginTop: spacing.xs,
@@ -209,16 +196,15 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   timeHint: {
-    marginTop: 2,
     fontSize: 11,
     color: theme.colors.textSecondary,
   },
-  timeDivider: {
-    marginTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
+  relativeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   unreadDot: {
+    marginLeft: spacing.xs,
     width: 10,
     height: 10,
     borderRadius: radii.pill,

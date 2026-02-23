@@ -43,6 +43,7 @@ export default function HomeRoute() {
       onNavigate={handleNavigate}
       onOpenNotifications={() => router.push('/(app)/notifications')}
       unreadNotifications={unreadCount}
+      userName={user?.fullName ?? undefined}
       missedReminderTasks={missedReminderTasks}
       upcomingTasks={upcomingTasks}
       upcomingLimit={10}

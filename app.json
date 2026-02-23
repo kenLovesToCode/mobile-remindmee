@@ -18,6 +18,10 @@
     "ios": {
       "supportsTablet": true
     },
+    "notification": {
+      "icon": "./assets/remind-mee-logo.png",
+      "color": "#101922"
+    },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/remind-mee-logo.png",

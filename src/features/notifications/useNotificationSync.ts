@@ -5,6 +5,7 @@ import Constants from 'expo-constants';
 import { syncNotificationsForUser } from './syncNotifications';
 import { initializeAuthDb } from '../../data/auth/db';
 import { markNotificationSentByTaskId } from '../../data/notifications/repository';
+import { registerPushTokenForUser } from './pushServer';
 
 export const useNotificationSync = (userId?: string) => {
   const isSyncingRef = useRef(false);
@@ -26,14 +27,24 @@ export const useNotificationSync = (userId?: string) => {
   }, [sync]);
 
   useEffect(() => {
+    if (!userId) {
+      return;
+    }
+    void registerPushTokenForUser(userId);
+  }, [userId]);
+
+  useEffect(() => {
     const handleStateChange = (nextState: AppStateStatus) => {
       if (nextState === 'active') {
+        if (userId) {
+          void registerPushTokenForUser(userId);
+        }
         sync();
       }
     };
     const subscription = AppState.addEventListener('change', handleStateChange);
     return () => subscription.remove();
-  }, [sync]);
+  }, [sync, userId]);
 
   useEffect(() => {
     if (!userId || Constants.appOwnership === 'expo' || Platform.OS === 'web') {

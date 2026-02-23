@@ -15,12 +15,17 @@ import {
 } from '../../data/notifications/repository';
 import { createId } from '../auth/ids';
 import { Task } from '../../data/tasks/models';
+import { syncPushJobsForUser } from './pushServer';
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
+const formatTaskTime = (scheduledAt: string) =>
+  new Date(scheduledAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+
 const buildNotificationContent = (task: Task) => ({
-  title: 'Upcoming Task',
-  body: `${task.title} starts in 1 hour.`,
+  title: '🔔 Reminder: 1 Hour Left',
+  subtitle: `Up next: ${task.title}`,
+  body: `Heads up — starts at ${formatTaskTime(task.scheduledAt)}.`,
   ...(Platform.OS === 'android' ? { channelId: 'tasks' as const } : {}),
   data: { taskId: task.id },
 });
@@ -47,7 +52,12 @@ const ensureChannel = async (Notifications: typeof import('expo-notifications'))
   }
   await Notifications.setNotificationChannelAsync('tasks', {
     name: 'Task Reminders',
-    importance: Notifications.AndroidImportance.DEFAULT,
+    importance: Notifications.AndroidImportance.HIGH,
+    vibrationPattern: [0, 250, 150, 250],
+    lightColor: '#4F7DF3',
+    enableLights: true,
+    enableVibrate: true,
+    sound: 'default',
   });
 };
 
@@ -211,4 +221,9 @@ export const syncNotificationsForUser = async (userId: string) => {
       await setNotificationIdentifier(notificationId, identifier);
     }
   }
+
+  // Best-effort server sync for reliable closed-app delivery when API routes are deployed.
+  await syncPushJobsForUser(userId).catch(() => {
+    return;
+  });
 };

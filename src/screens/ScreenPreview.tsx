@@ -25,6 +25,7 @@ export const ScreenPreview = ({}: ScreenPreviewProps) => {
           <HomeDashboardScreen
             onAddTask={() => navigateTo('newTask')}
             onNavigate={navigateTo}
+            userName="Alex"
             upcomingTasks={[]}
             stats={{ today: 0, scheduled: 0, done: 0 }}
           />

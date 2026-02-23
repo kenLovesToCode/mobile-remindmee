@@ -16,7 +16,7 @@ import { StatCard } from '../components/StatCard';
 import { ReminderCard } from '../components/ReminderCard';
 import { BottomNav } from '../components/BottomNav';
 import { AppIcon } from '../components/ui/AppIcon';
-import { userProfile, ScreenKey } from '../data/mockData';
+import { ScreenKey } from '../data/mockData';
 import { Task, TaskPriority } from '../data/tasks/models';
 import { palette, radii, spacing, theme } from '../theme/colors';
 
@@ -25,6 +25,7 @@ export interface HomeDashboardScreenProps {
   readonly onNavigate?: (screen: ScreenKey) => void;
   readonly onOpenNotifications?: () => void;
   readonly unreadNotifications?: number;
+  readonly userName?: string;
   readonly missedReminderTasks?: Task[];
   readonly upcomingTasks?: Task[];
   readonly upcomingLimit?: number;
@@ -51,6 +52,17 @@ const priorityAccentMap: Record<TaskPriority, 'red' | 'orange' | 'primary'> = {
   Low: 'primary',
 };
 
+const formatGreeting = (name?: string) => {
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
+  const firstName = name?.trim().split(' ')[0] ?? '';
+  return firstName ? `${greeting}, ${firstName}` : greeting;
+};
+
+const formatDateLabel = () =>
+  new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
 const formatDateTimeLabel = (date: Date) =>
   date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) +
   ' • ' +
@@ -61,6 +73,7 @@ export const HomeDashboardScreen = ({
   onNavigate,
   onOpenNotifications,
   unreadNotifications = 0,
+  userName,
   missedReminderTasks = [],
   upcomingTasks = [],
   upcomingLimit = 10,
@@ -161,8 +174,8 @@ export const HomeDashboardScreen = ({
               <Text style={styles.avatarText}>A</Text>
             </View>
             <View>
-              <Text style={styles.greeting}>{userProfile.greeting}</Text>
-              <Text style={styles.date}>{userProfile.dateLabel}</Text>
+              <Text style={styles.greeting}>{formatGreeting(userName)}</Text>
+              <Text style={styles.date}>{formatDateLabel()}</Text>
             </View>
           </View>
           <Pressable style={styles.iconButton} onPress={onOpenNotifications} disabled={!onOpenNotifications}>
